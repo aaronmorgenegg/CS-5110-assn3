@@ -67,9 +67,47 @@ def borda(society):
 
     return sortCounts(counts, candidates)
 
+def singleTransferableVote(society):
+    """
+    Given a society of voters, computes the single transferable vote candidate
+    :param society:
+    :return:
+    """
+    counts = []
+    candidates = list(CANDIDATES)
+    sorted_candidates = []
+    for i in range(len(candidates)):
+        counts.append(0)
+
+    max_votes = 0
+    for voter in society.voters: max_votes += voter.weight
+    threshold = max_votes/2 + 1
+
+    while True:
+        for voter in society.voters:
+            for candidate in candidates:
+                if voter.ordering[0] == candidate:
+                    counts[candidates.index(candidate)] += voter.weight
+
+        min_count = min(counts)
+        max_count = max(counts)
+        min_candidate = candidates[counts.index(min_count)]
+        max_candidate = candidates[counts.index(max_count)]
+        if max_count > threshold:
+            sorted_candidates.append(max_candidate)
+            sorted_candidates.reverse()
+            return sorted_candidates
+        else:
+            sorted_candidates.append(candidates[counts.index(min_count)])
+            for voter in society.voters:
+                if voter.ordering[0] == candidate:
+                    counts[candidates.index(candidate)] += voter.weight
+            del candidates[counts.index(min_count)]
+            threshold -= 1
+
 def sortCounts(counts, candidates):
     """
-    returns a sorted candidates list based on counts list for borda
+    returns a sorted candidates list based on counts list
     :param counts:
     :param candidates:
     :return:
@@ -109,5 +147,10 @@ if __name__ == '__main__':
     test_borda.addVoter(Voter(1, ['B', 'D', 'C', 'A']))
     test_borda.addVoter(Voter(4, ['B', 'C', 'D', 'A']))
 
+    print("Testing Borda method of given society of voters...")
     print(test_borda)
+    print("Borda ranking...")
     print(borda(test_borda))
+
+    print("STV ranking...")
+    print(singleTransferableVote(test_borda))
