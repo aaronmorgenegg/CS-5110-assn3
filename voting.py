@@ -79,9 +79,7 @@ def singleTransferableVote(society):
     for i in range(len(candidates)):
         counts.append(0)
 
-    max_votes = 0
-    for voter in society.voters: max_votes += voter.weight
-    threshold = max_votes/2 + 1
+    max_votes = getThreshold(society)
 
     while True:
         for voter in society.voters:
@@ -105,6 +103,33 @@ def singleTransferableVote(society):
             del candidates[counts.index(min_count)]
             threshold -= 1
 
+def bucklin(society):
+    """
+    Given a society of voters, computes the bucklin ranking candidate
+    :param society:
+    :return:
+    """
+    k = 1
+    threshold = getThreshold(society)
+    candidates = list(CANDIDATES)
+    counts = []
+    for i in range(len(candidates)):
+        counts.append(0)
+
+    while k < len(society.voters):
+        for i in range(len(candidates)):
+            counts[i] = 0
+        for voter in society.voters:
+            for i in range(0, k):
+                counts[candidates.index(voter.ordering[i])] += voter.weight
+
+        for i in range(len(candidates)):
+            if counts[i] > threshold and counts[i] == max(counts):
+                return (candidates[i], k)
+        k += 1
+
+    print("Error: No bucklin ranking found.")
+
 def sortCounts(counts, candidates):
     """
     returns a sorted candidates list based on counts list
@@ -116,6 +141,11 @@ def sortCounts(counts, candidates):
     indexes.sort(key=counts.__getitem__)
     sorted_candidates = map(candidates.__getitem__, indexes)
     return list(sorted_candidates)
+
+def getThreshold(society):
+    threshold = 0
+    for voter in society.voters: threshold += voter.weight
+    return (threshold / 2 + 1)
 
 def getRandomWeight():
     return random.randint(1, MAX_WEIGHT)
@@ -129,28 +159,34 @@ def getRandomOrdering():
     random.shuffle(candidates_copy)
     return candidates_copy
 
-if __name__ == '__main__':
-    my_society = Society()
-    guy = Voter(None, None)
-    hermano = Voter(5, CANDIDATES)
+def tallyVotes(society):
+    """
+    runs the given society through each of the voting schemes and prints results
+    :param society:
+    :return:
+    """
+    print("----------")
 
-    my_society.addVoter(guy)
-    my_society.addVoter(hermano)
-    print(my_society)
+    print("Tallying votes for given society of voters...")
+    print(society)
 
-    print(borda(my_society))
-
-    test_borda = Society()
-    test_borda.addVoter(Voter(8, ['A', 'B', 'C', 'D']))
-    test_borda.addVoter(Voter(6, ['C', 'D', 'B', 'A']))
-    test_borda.addVoter(Voter(1, ['C', 'D', 'A', 'B']))
-    test_borda.addVoter(Voter(1, ['B', 'D', 'C', 'A']))
-    test_borda.addVoter(Voter(4, ['B', 'C', 'D', 'A']))
-
-    print("Testing Borda method of given society of voters...")
-    print(test_borda)
     print("Borda ranking...")
-    print(borda(test_borda))
+    print(borda(society))
 
-    print("STV ranking...")
-    print(singleTransferableVote(test_borda))
+    print("\nBucklin ranking...")
+    print(bucklin(society))
+
+    print("\nSTV ranking...")
+    # print(singleTransferableVote(society))
+
+    print("----------")
+
+if __name__ == '__main__':
+    test1 = Society()
+    test1.addVoter(Voter(8, ['A', 'B', 'C', 'D']))
+    test1.addVoter(Voter(6, ['C', 'D', 'B', 'A']))
+    test1.addVoter(Voter(1, ['C', 'D', 'A', 'B']))
+    test1.addVoter(Voter(1, ['B', 'D', 'C', 'A']))
+    test1.addVoter(Voter(4, ['B', 'C', 'D', 'A']))
+
+    tallyVotes(test1)
