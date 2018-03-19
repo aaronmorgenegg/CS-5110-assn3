@@ -6,7 +6,10 @@ import random
 # ----- CONST DECLARATIONS -----
 
 CANDIDATES = ['A', 'B', 'C', 'D']
+MIN_WEIGHT = 1
 MAX_WEIGHT = 10
+MIN_VOTERS = 3
+MAX_VOTERS = 10
 
 class Voter:
     """
@@ -50,6 +53,26 @@ class Society:
             retval += "Voter " + str(i) + " <" + str(self.voters[i]) + ">\n"
         return retval
 
+    def restrict(self, a, b):
+        """
+        Enforces the restriction that a > b in all cases if a and b are candidates
+        Enforces the restriction that a is always in bth place if b is an index
+        :param a:
+        :param b:
+        :return:
+        """
+        if isinstance(b, int):
+            for voter in self.voters:
+                index_a = voter.ordering.index(a)
+                if index_a != b:
+                    voter.ordering[index_a], voter.ordering[b] = voter.ordering[b], voter.ordering[index_a]
+        else:
+            for voter in self.voters:
+                index_a = voter.ordering.index(a)
+                index_b = voter.ordering.index(b)
+                if index_a > index_b:
+                    voter.ordering[index_a], voter.ordering[index_b] = voter.ordering[index_b], voter.ordering[index_a]
+
 def borda(society):
     """
     Given a society of voters, return the borda ranking
@@ -79,14 +102,15 @@ def singleTransferableVote(society):
     for i in range(len(candidates)):
         counts.append(0)
 
-    max_votes = getThreshold(society)
+    threshold = getThreshold(society)
 
     while True:
+        resetCounts(counts)
         for voter in society.voters:
-            for candidate in candidates:
-                if voter.ordering[0] == candidate:
-                    counts[candidates.index(candidate)] += voter.weight
-
+            for i in range(len(voter.ordering)):
+                if voter.ordering[i] in candidates:
+                    counts[candidates.index(voter.ordering[i])] += voter.weight
+                    break
         min_count = min(counts)
         max_count = max(counts)
         min_candidate = candidates[counts.index(min_count)]
@@ -94,14 +118,14 @@ def singleTransferableVote(society):
         if max_count > threshold:
             sorted_candidates.append(max_candidate)
             sorted_candidates.reverse()
+            for candidate in candidates:
+                if candidate not in sorted_candidates:
+                    sorted_candidates.insert(1,candidate)
             return sorted_candidates
         else:
-            sorted_candidates.append(candidates[counts.index(min_count)])
-            for voter in society.voters:
-                if voter.ordering[0] == candidate:
-                    counts[candidates.index(candidate)] += voter.weight
-            del candidates[counts.index(min_count)]
-            threshold -= 1
+            sorted_candidates.append(min_candidate)
+            candidates.remove(min_candidate)
+            counts.remove(min_count)
 
 def bucklin(society):
     """
@@ -117,8 +141,7 @@ def bucklin(society):
         counts.append(0)
 
     while k < len(society.voters):
-        for i in range(len(candidates)):
-            counts[i] = 0
+        resetCounts(counts)
         for voter in society.voters:
             for i in range(0, k):
                 counts[candidates.index(voter.ordering[i])] += voter.weight
@@ -147,8 +170,12 @@ def getThreshold(society):
     for voter in society.voters: threshold += voter.weight
     return (threshold / 2 + 1)
 
+def resetCounts(counts):
+    for i in range(len(counts)):
+        counts[i] = 0
+
 def getRandomWeight():
-    return random.randint(1, MAX_WEIGHT)
+    return random.randint(MIN_WEIGHT, MAX_WEIGHT)
 
 def getRandomOrdering():
     """
@@ -177,16 +204,45 @@ def tallyVotes(society):
     print(bucklin(society))
 
     print("\nSTV ranking...")
-    # print(singleTransferableVote(society))
+    print(singleTransferableVote(society))
 
     print("----------")
 
 if __name__ == '__main__':
+    print("Test 1: Predefined society of voters")
     test1 = Society()
     test1.addVoter(Voter(8, ['A', 'B', 'C', 'D']))
     test1.addVoter(Voter(6, ['C', 'D', 'B', 'A']))
     test1.addVoter(Voter(1, ['C', 'D', 'A', 'B']))
     test1.addVoter(Voter(1, ['B', 'D', 'C', 'A']))
     test1.addVoter(Voter(4, ['B', 'C', 'D', 'A']))
-
     tallyVotes(test1)
+
+    print("Test 2: Random society of voters")
+    test2 = Society()
+    for i in range(random.randint(MIN_VOTERS, MAX_VOTERS)):
+        test2.addVoter(Voter(None, None))
+    tallyVotes(test2)
+
+    print("Test 3: Random society of voters with restriction that C > A")
+    test3 = Society()
+    for i in range(random.randint(MIN_VOTERS, MAX_VOTERS)):
+        test3.addVoter(Voter(None, None))
+    test3.restrict('C', 'A')
+    tallyVotes(test3)
+
+    print("Test 4: Random society of voters with restriction that B is always ranked 2nd")
+    test4 = Society()
+    for i in range(random.randint(MIN_VOTERS, MAX_VOTERS)):
+        test4.addVoter(Voter(None, None))
+    test4.restrict('B', 1)
+    tallyVotes(test4)
+
+    print("Test 5: Random society of voters with restrictions that A is always ranked 2nd, D > C, and B < C")
+    test5 = Society()
+    for i in range(random.randint(MIN_VOTERS, MAX_VOTERS)):
+        test5.addVoter(Voter(None, None))
+    test5.restrict('A', 1)
+    test5.restrict('D', 'C')
+    test5.restrict('C', 'B')
+    tallyVotes(test5)
