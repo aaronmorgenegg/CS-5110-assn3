@@ -32,7 +32,8 @@ Get a borda ranking on a society with borda(society)
     - ex print(borda(my_society))
 
 Get a bucklin ranking on a society with bucklin(society)
-    - ex print(bucklin(my_society))
+    - ex print(bucklin(my_society))i
+    - returns a tuple containing the top bucklin candidate and the value of k
 
 Get a single transferable vote on a society with singleTransferableVote(society)
     - ex print(singleTransferableVote(my_society))
