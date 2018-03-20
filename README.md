@@ -11,7 +11,9 @@ Several functions are available to create voters, societies, and social rankings
 
 Constants are changed at the top
 
-a list of candidates used for voting is included at the top in the CANDIDATES list
+a list of candidates used for voting is included at the top in the CANDIDATES list. You can add more candidates, but be
+aware that the 'test1' society will break since it is predefined to contain only 4 candidates. The random societies will
+adjust based on the given candidates
 
 Create a voter using Voter(weight, ordering)
     - where weight is an integer greater than 1
